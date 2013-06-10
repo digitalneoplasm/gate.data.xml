@@ -1,4 +1,7 @@
+/bin
+/doc
 /target
+/test
 /lib
 /classes
 /checkouts
@@ -6,7 +9,10 @@ pom.xml
 pom.xml.asc
 *.jar
 *.class
+.classpath
 .lein-deps-sum
 .lein-failures
 .lein-plugins
 .lein-repl-history
+.project
+.settings
