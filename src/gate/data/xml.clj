@@ -2,7 +2,12 @@
       :author "Daniel R. Schlegel and Mike Prentice"}
   gate.data.xml
   (:require [clojure.xml :as xml]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as set]))
+
+;;;;;;;;;;;;;;;
+;;; Parsing ;;;
+;;;;;;;;;;;;;;;
 
 (defn raw-annotation-sets
   "Return the GATE annotation sets"
@@ -68,15 +73,14 @@
                                     (partition 2 1 relnodes))))))
 
 ;;Takes as input an annotation (created from raw-annotations) and converts it into a 
-;;map with keys :id, :type, :start, :end, :text, and :featureMap. (Mike calls this a struct, 
-;;and while he's not *wrong*, the struct was never defined - so this is really just a map).
+;;map with keys :id, :type, :start, :end, :text, and :featureMap.
 (defn raw->annot
-  "Convert an XML annotation to a annot struct"
+  "Convert an XML annotation to an annotation map."
   [annotation gateDocument]
   (let [{:keys [Id Type StartNode EndNode]} (:attrs annotation)
         features (feature-map annotation)
         text (get-text-in-range StartNode EndNode gateDocument)]
-    {:id Id, :type Type, :start (Integer/valueOf StartNode), :end (Integer/valueOf EndNode), :text text,
+    {:id Id, :type #{Type}, :start (Integer/valueOf StartNode), :end (Integer/valueOf EndNode), :text text,
      :featureMap features}))
 
 (defn annotations
@@ -189,24 +193,30 @@
   "Return the locmap for named entities"
   [toks named-entities id-updates matches]
   (let [merge-maps (fn [res lat]
-	  (if (not (and (= (:start res) (:start lat)) (= (:end res) (:end lat)))) lat
-	    (do
-	      (let [newid (:id lat)
-		    newfeat (merge-feature-maps-destructively (:featureMap res) (:featureMap lat))
-		    newmap (-> lat (assoc :featureMap newfeat) (assoc :id newid))
-		    newmatches (ref @matches)]
-		(doseq [mlist (seq @matches)]
-		  (let [ml (ref mlist)] 
-		    (doseq [m (seq @ml)]
-		      (if (= (str m) (str res))
-			(dosync (ref-set ml (conj (disj @ml (str res)) (str lat))))))
-		    (if (not (= @ml mlist))
-		      (dosync (ref-set newmatches (conj (disj @newmatches mlist) @ml))))))
-		(dosync (ref-set matches @newmatches))
-		(if (not (nil? @id-updates)) (dosync (ref-set id-updates (assoc @id-updates (keyword res) lat))))
-		newmap))))
+                     (if (not (and (= (:start res) (:start lat)) (= (:end res) (:end lat)))) lat
+                       (do
+                         (let [newid (:id lat)
+                               newfeat (merge-feature-maps-destructively (:featureMap res) (:featureMap lat))
+                               newmap (-> lat (assoc :featureMap newfeat) (assoc :id newid) (assoc :type (set/union (:type res) (:type lat))))
+                               newmatches (ref @matches)]
+                           (doseq [mlist (seq @matches)]
+                             (let [ml (ref mlist)] 
+                               (doseq [m (seq @ml)]
+                                 (if (= (str m) (str res))
+                                   (dosync (ref-set ml (conj (disj @ml (str res)) (str lat))))))
+                               (if (not (= @ml mlist))
+                                 (dosync (ref-set newmatches (conj (disj @newmatches mlist) @ml))))))
+                           (dosync (ref-set matches @newmatches))
+                           (if (not (nil? @id-updates)) (dosync (ref-set id-updates (assoc @id-updates (keyword res) lat))))
+                           newmap))))
         locmaptoks (location-map toks)
         locmapents (merge-entities named-entities merge-maps)
         newmap (dosync (ref-set id-updates (hash-map)))
         mergedmap (merge-with merge-maps locmaptoks locmapents)]
     mergedmap))
+
+(defn get-annotations-of-type
+  "Return the annotations of the given type"
+  [annotationType annotationList]
+  (filter #((:type %) annotationType) annotationList))
+
