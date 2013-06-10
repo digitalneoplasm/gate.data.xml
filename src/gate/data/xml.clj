@@ -198,12 +198,12 @@
 		(doseq [mlist (seq @matches)]
 		  (let [ml (ref mlist)] 
 		    (doseq [m (seq @ml)]
-		      (if (= (str m) (str (sid res)))
-			(dosync (ref-set ml (conj (disj @ml (str (sid res))) (str (sid lat)))))))
+		      (if (= (str m) (str res))
+			(dosync (ref-set ml (conj (disj @ml (str res)) (str lat))))))
 		    (if (not (= @ml mlist))
 		      (dosync (ref-set newmatches (conj (disj @newmatches mlist) @ml))))))
 		(dosync (ref-set matches @newmatches))
-		(if (not (nil? @id-updates)) (dosync (ref-set id-updates (assoc @id-updates (keyword (sid res)) (sid lat)))))
+		(if (not (nil? @id-updates)) (dosync (ref-set id-updates (assoc @id-updates (keyword res) lat))))
 		newmap))))
         locmaptoks (location-map toks)
         locmapents (merge-entities named-entities merge-maps)
