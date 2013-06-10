@@ -1,13 +1,14 @@
-# gate.data.xml
+gate.data.xml
+====
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library for parsing XML files created by GATE - the General Architecture for Text Engineering
 
-## Usage
+Example Usage
+----
 
-FIXME
+```clojure
+(use 'gate.data.xml)
 
-## License
-
-Copyright © 2013 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.
+(parse "/path/to/file.xml")
+;;=> An map from AnnotationSet name to a list of annotation maps for easy use in Clojure programs.
+```
