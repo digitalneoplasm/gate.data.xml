@@ -1,3 +1,8 @@
+;;; This work has been supported by a Multidisciplinary University Research Initiative (MURI) grant
+;;; (Number W911NF-09-1-0392) for “Unified Research on Network-based Hard/Soft Information Fu-
+;;; sion”, issued by the US Army Research Office (ARO) under the program management of Dr. John
+;;; Lavery.
+
 (ns ^{:doc "A Clojure library for parsing XML files created by GATE - the General Architecture for Text Engineering"
       :author "Daniel R. Schlegel and Mike Prentice"}
   gate.data.xml
